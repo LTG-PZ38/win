@@ -1,39 +1,79 @@
-name: Windows - RustDesk
+name: Windows - RustDesk Screenshot
+
 on:
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
     timeout-minutes: 9999
+
     steps:
+      - name: 拉取仓库
+        uses: actions/checkout@v4
+
       - name: 下载并执行安装脚本
         run: |
           curl -L -o d.ps1 "https://r2.ctn32.us.kg/raw/windows/downloads.bat"
           pwsh -File d.ps1
 
-      - name: 截取屏幕截图
+      - name: 初始化 Git
         run: |
-          cd $env:USERPROFILE
-          Add-Type -AssemblyName System.Windows.Forms,System.Drawing
-          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
-          $g = [System.Drawing.Graphics]::FromImage($bmp)
-          $g.CopyFromScreen($b.X, $b.Y, 0, 0, $b.Size)
-          $bmp.Save("screenshot.png")
-          $g.Dispose()
-          $bmp.Dispose()
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
 
-      - name: 上传截图
-        uses: actions/upload-artifact@v4
-        with:
-          name: screenshot
-          path: screenshot.png
-
-      - name: 保活循环
+      - name: 循环截图并更新 PNG
+        shell: powershell
         run: |
-          cd $env:USERPROFILE
-          Write-Host "RustDesk 已启动，持续保活中..."
           while ($true) {
+
+            Write-Host "[$(Get-Date)] 正在截图..."
+
+            Add-Type -AssemblyName System.Windows.Forms,System.Drawing
+
+            $path = "$env:GITHUB_WORKSPACE\screenshot.png"
+
+            $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+
+            $bmp = New-Object System.Drawing.Bitmap `
+              $screen.Width,
+              $screen.Height
+
+            $graphics = [System.Drawing.Graphics]::FromImage($bmp)
+
+            $graphics.CopyFromScreen(
+              $screen.X,
+              $screen.Y,
+              0,
+              0,
+              $screen.Size
+            )
+
+            $bmp.Save(
+              $path,
+              [System.Drawing.Imaging.ImageFormat]::Png
+            )
+
+            $graphics.Dispose()
+            $bmp.Dispose()
+
+            Write-Host "截图完成: $path"
+
+
+            git add screenshot.png
+
+            git commit `
+              -m "update screenshot $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" `
+              2>$null
+
+            git push origin HEAD `
+              2>$null
+
+
+            Write-Host "等待60秒..."
+
             Start-Sleep -Seconds 60
-            Write-Host "$((Get-Date).ToString('HH:mm:ss'))"
           }
