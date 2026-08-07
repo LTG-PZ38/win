@@ -12,10 +12,19 @@ jobs:
           curl -L -o downloads.ps1 "https://r2.ctn32.us.kg/raw/windows/downloads.bat"
           pwsh -ExecutionPolicy Bypass -File downloads.ps1
 
-      - name: 截取屏幕截图（不打印图片内容）
+      - name: 截取屏幕截图（使用 PowerShell .NET 方法）
         run: |
-          cd $env:USERPROFILE
-          python -c "import pyautogui; pyautogui.screenshot('screenshot.png')"
+          Add-Type -AssemblyName System.Windows.Forms
+          Add-Type -AssemblyName System.Drawing
+          $screen = [System.Windows.Forms.Screen]::PrimaryScreen
+          $bounds = $screen.Bounds
+          $bitmap = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
+          $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+          $graphics.CopyFromScreen($bounds.X, $bounds.Y, 0, 0, $bounds.Size)
+          $bitmap.Save("$env:USERPROFILE\screenshot.png")
+          $graphics.Dispose()
+          $bitmap.Dispose()
+          Write-Host "截图已保存至: $env:USERPROFILE\screenshot.png"
 
       - name: 上传截图作为 Artifact
         uses: actions/upload-artifact@v4
