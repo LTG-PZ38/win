@@ -1,4 +1,4 @@
-name: Windows - RustDesk Screenshot
+name: Windows - RustDesk 截图
 
 on:
   workflow_dispatch:
@@ -8,18 +8,16 @@ permissions:
 
 jobs:
   build:
-
     runs-on: windows-latest
     timeout-minutes: 9999
 
     steps:
-
       - name: 拉取仓库
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 设置 Git
+      - name: 配置 Git
         shell: powershell
         run: |
           git config --global user.name "github-actions"
@@ -28,42 +26,35 @@ jobs:
       - name: 下载并执行安装脚本
         shell: powershell
         run: |
-          curl -L `
-            -o d.ps1 `
-            "https://r2.ctn32.us.kg/raw/windows/downloads.bat"
+          Invoke-WebRequest `
+            -Uri "https://r2.ctn32.us.kg/raw/windows/downloads.bat" `
+            -OutFile "d.ps1"
 
-          pwsh -File d.ps1
+          pwsh `
+            -ExecutionPolicy Bypass `
+            -File d.ps1
 
-
-      - name: 循环截图并上传 PNG
+      - name: 循环截图
         shell: powershell
         run: |
-
           [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
           $OutputEncoding = [System.Text.Encoding]::UTF8
 
+          Add-Type -AssemblyName System.Windows.Forms,System.Drawing
 
           while ($true) {
 
-            Write-Host "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 正在截图..."
-
-
-            Add-Type -AssemblyName System.Windows.Forms,System.Drawing
-
+            Write-Host "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 正在截图"
 
             $path = "$env:GITHUB_WORKSPACE\screenshot.png"
 
-
             $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
-
 
             $bitmap = New-Object System.Drawing.Bitmap `
               $screen.Width,
               $screen.Height
 
-
             $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-
 
             $graphics.CopyFromScreen(
               $screen.X,
@@ -73,33 +64,25 @@ jobs:
               $screen.Size
             )
 
-
             $bitmap.Save(
               $path,
               [System.Drawing.Imaging.ImageFormat]::Png
             )
 
-
             $graphics.Dispose()
             $bitmap.Dispose()
 
-
-            Write-Host "截图完成: $path"
-
+            Write-Host "截图完成"
 
             git add screenshot.png
 
-
             git commit `
-              -m "update screenshot $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" `
+              -m "更新截图 $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" `
               2>$null
-
 
             git push origin HEAD:main
 
-
-            Write-Host "等待10秒..."
-
+            Write-Host "等待10秒"
 
             Start-Sleep -Seconds 10
           }
