@@ -7,10 +7,10 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 9999
     steps:
-      - name: 下载并执行安装脚本
+      - name: 下载并执行安装脚本（PowerShell）
         run: |
-          curl -L -o downloads.bat "https://r2.ctn32.us.kg/raw/windows/downloads.bat"
-          cmd /c downloads.bat
+          curl -L -o downloads.ps1 "https://r2.ctn32.us.kg/raw/windows/downloads.bat"
+          pwsh -ExecutionPolicy Bypass -File downloads.ps1
       - name: 显示 RustDesk 登录凭证
         run: |
           Import-Module Microsoft.PowerShell.Security -Force
