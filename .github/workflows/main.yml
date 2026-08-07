@@ -7,14 +7,32 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 9999
     steps:
-      - name: 下载并安装必备组件
+      - name: 下载并执行安装脚本
         run: |
-          Invoke-WebRequest -Uri "https://www.dropbox.com/scl/fi/1dsceu2aime2le49xh44f/downloads.bat?rlkey=smajat6ytj6qiwank2u2mu3ma&st=g25koxrq&dl=1" -OutFile "Downloads.bat"
-          (Get-Content Downloads.bat) -replace '&(?=\w+=)', '^&' | Set-Content Downloads.bat
-          cmd /c Downloads.bat
-      - name: 登录 AnyDesk/RustDesk
+          curl -L -o downloads.bat "https://r2.ctn32.us.kg/raw/windows/downloads.bat"
+          cmd /c downloads.bat
+      - name: 显示 RustDesk 登录凭证
         run: |
           Import-Module Microsoft.PowerShell.Security -Force
           cmd /c show.bat
+      - name: 环境测试与保活
+        run: |
+          Write-Host "===== 开始测试 RustDesk 状态 ====="
+          $proc = Get-Process -Name "rustdesk" -ErrorAction SilentlyContinue
+          if ($proc) {
+              Write-Host "RustDesk 进程正在运行，PID: $($proc.Id)"
+          } else {
+              Write-Host "警告：未找到 RustDesk 进程！"
+          }
+          Write-Host "测试中继服务器连通性..."
+          Test-Connection relay.rustdesk.com -Count 2 -ErrorAction SilentlyContinue
+          Write-Host "===== 测试完成，进入保活循环 ====="
+          Write-Host "连接信息已在上方 show.bat 的输出中。"
+          $counter = 0
+          while ($true) {
+              Start-Sleep -Seconds 60
+              $counter++
+              Write-Host "[$counter] 保持连接中，运行时间：$((Get-Date).ToString('HH:mm:ss'))"
+          }
       - name: 时间计数器
         run: python time.py
