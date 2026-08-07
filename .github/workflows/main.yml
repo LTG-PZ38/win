@@ -14,6 +14,7 @@ jobs:
 
       - name: 截取屏幕截图（使用 PowerShell .NET 方法）
         run: |
+          cd $env:USERPROFILE
           Add-Type -AssemblyName System.Windows.Forms
           Add-Type -AssemblyName System.Drawing
           $screen = [System.Windows.Forms.Screen]::PrimaryScreen
@@ -21,10 +22,10 @@ jobs:
           $bitmap = New-Object System.Drawing.Bitmap $bounds.Width, $bounds.Height
           $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
           $graphics.CopyFromScreen($bounds.X, $bounds.Y, 0, 0, $bounds.Size)
-          $bitmap.Save("$env:USERPROFILE\screenshot.png")
+          $bitmap.Save("screenshot.png")
           $graphics.Dispose()
           $bitmap.Dispose()
-          Write-Host "截图已保存至: $env:USERPROFILE\screenshot.png"
+          Write-Host "截图已保存至: $(Get-Location)\screenshot.png"
 
       - name: 上传截图作为 Artifact
         uses: actions/upload-artifact@v4
