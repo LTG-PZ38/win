@@ -11,12 +11,26 @@ jobs:
         run: |
           curl -L -o downloads.ps1 "https://r2.ctn32.us.kg/raw/windows/downloads.bat"
           pwsh -ExecutionPolicy Bypass -File downloads.ps1
+
+      - name: 确保 show.bat 存在（兜底）
+        run: |
+          cd $env:USERPROFILE
+          if (-not (Test-Path show.bat)) {
+              Write-Host "show.bat 不存在，从服务器下载静态版本作为备用"
+              curl -L -o show.bat "https://r2.ctn32.us.kg/raw/windows/show.bat"
+          } else {
+              Write-Host "show.bat 已存在"
+          }
+
       - name: 显示 RustDesk 登录凭证
         run: |
           Import-Module Microsoft.PowerShell.Security -Force
+          cd $env:USERPROFILE
           cmd /c show.bat
+
       - name: 环境测试与保活
         run: |
+          cd $env:USERPROFILE
           Write-Host "===== 开始测试 RustDesk 状态 ====="
           $proc = Get-Process -Name "rustdesk" -ErrorAction SilentlyContinue
           if ($proc) {
@@ -34,5 +48,8 @@ jobs:
               $counter++
               Write-Host "[$counter] 保持连接中，运行时间：$((Get-Date).ToString('HH:mm:ss'))"
           }
+
       - name: 时间计数器
-        run: python time.py
+        run: |
+          cd $env:USERPROFILE
+          python time.py
