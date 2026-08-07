@@ -73,7 +73,7 @@ jobs:
               2>$null
 
 
-            Write-Host "等待60秒..."
+            Write-Host "等待10秒..."
 
-            Start-Sleep -Seconds 60
+            Start-Sleep -Seconds 10
           }
