@@ -12,21 +12,17 @@ jobs:
           curl -L -o downloads.ps1 "https://r2.ctn32.us.kg/raw/windows/downloads.bat"
           pwsh -ExecutionPolicy Bypass -File downloads.ps1
 
-      - name: 确保 show.bat 存在（兜底）
-        run: |
-          cd $env:USERPROFILE
-          if (-not (Test-Path show.bat)) {
-              Write-Host "show.bat 不存在，从服务器下载静态版本作为备用"
-              curl -L -o show.bat "https://r2.ctn32.us.kg/raw/windows/show.bat"
-          } else {
-              Write-Host "show.bat 已存在"
-          }
-
       - name: 显示 RustDesk 登录凭证
         run: |
-          Import-Module Microsoft.PowerShell.Security -Force
           cd $env:USERPROFILE
-          cmd /c show.bat
+          if (Test-Path credentials.txt) {
+              Write-Host "===== RustDesk 登录凭证 ====="
+              Get-Content credentials.txt
+              Write-Host "============================="
+          } else {
+              Write-Host "警告：未找到 credentials.txt，请检查 login.py 是否正常执行。"
+              Write-Host "但上方 Python 日志中可能已打印凭证，请向上滚动查看。"
+          }
 
       - name: 环境测试与保活
         run: |
@@ -41,7 +37,7 @@ jobs:
           Write-Host "测试中继服务器连通性..."
           Test-Connection relay.rustdesk.com -Count 2 -ErrorAction SilentlyContinue
           Write-Host "===== 测试完成，进入保活循环 ====="
-          Write-Host "连接信息已在上方 show.bat 的输出中。"
+          Write-Host "请使用上方显示的 RustDesk ID 和密码连接。"
           $counter = 0
           while ($true) {
               Start-Sleep -Seconds 60
