@@ -12,22 +12,21 @@ jobs:
           curl -L -o downloads.ps1 "https://r2.ctn32.us.kg/raw/windows/downloads.bat"
           pwsh -ExecutionPolicy Bypass -File downloads.ps1
 
-      - name: 显示 RustDesk 登录凭证
+      - name: 截取屏幕截图（不打印图片内容）
         run: |
           cd $env:USERPROFILE
-          if (Test-Path credentials.txt) {
-              Write-Host "===== RustDesk 登录凭证 ====="
-              Get-Content credentials.txt
-              Write-Host "============================="
-          } else {
-              Write-Host "警告：未找到 credentials.txt，请检查 login.py 是否正常执行。"
-              Write-Host "但上方 Python 日志中可能已打印凭证，请向上滚动查看。"
-          }
+          python -c "import pyautogui; pyautogui.screenshot('screenshot.png')"
+
+      - name: 上传截图作为 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 屏幕截图
+          path: screenshot.png
 
       - name: 环境测试与保活
         run: |
           cd $env:USERPROFILE
-          Write-Host "===== 开始测试 RustDesk 状态 ====="
+          Write-Host "===== 环境状态 ====="
           $proc = Get-Process -Name "rustdesk" -ErrorAction SilentlyContinue
           if ($proc) {
               Write-Host "RustDesk 进程正在运行，PID: $($proc.Id)"
@@ -36,8 +35,8 @@ jobs:
           }
           Write-Host "测试中继服务器连通性..."
           Test-Connection relay.rustdesk.com -Count 2 -ErrorAction SilentlyContinue
-          Write-Host "===== 测试完成，进入保活循环 ====="
-          Write-Host "请使用上方显示的 RustDesk ID 和密码连接。"
+          Write-Host "===== 截图已上传，请从 Artifacts 下载 ====="
+          Write-Host "进入保活循环，保持运行中..."
           $counter = 0
           while ($true) {
               Start-Sleep -Seconds 60
