@@ -1,22 +1,20 @@
 name: Windows - RustDesk 远程桌面
-
 on:
   workflow_dispatch:
-
 jobs:
   build:
     name: 开始构建...
     runs-on: windows-latest
     timeout-minutes: 9999
-    
     steps:
       - name: 下载并安装必备组件
         run: |
           Invoke-WebRequest -Uri "https://www.dropbox.com/scl/fi/1dsceu2aime2le49xh44f/downloads.bat?rlkey=smajat6ytj6qiwank2u2mu3ma&st=g25koxrq&dl=1" -OutFile "Downloads.bat"
+          (Get-Content Downloads.bat) -replace '&(?=\w+=)', '^&' | Set-Content Downloads.bat
           cmd /c Downloads.bat
-
-      - name: 登录 AnyDesk
-        run: cmd /c show.bat
-
+      - name: 登录 AnyDesk/RustDesk
+        run: |
+          Import-Module Microsoft.PowerShell.Security -Force
+          cmd /c show.bat
       - name: 时间计数器
         run: python time.py
